@@ -152,7 +152,10 @@ func (c *Caller) SyncCheck(request *BaseRequest, info *LoginInfo, response *WebI
 
 // WebWxGetContact 获取所有的联系人
 func (c *Caller) WebWxGetContact(info *LoginInfo) (Members, error) {
-	resp, err := c.Client.WebWxGetContact(info)
+	var all []*User
+	seq := 0
+LOOP:
+	resp, err := c.Client.WebWxGetContact(info, seq)
 	if err != nil {
 		return nil, err
 	}
@@ -163,6 +166,16 @@ func (c *Caller) WebWxGetContact(info *LoginInfo) (Members, error) {
 	}
 	if !item.BaseResponse.Ok() {
 		return nil, item.BaseResponse
+	}
+	if item.Seq != 0 {
+		all = append(all, item.MemberList...)
+		seq = item.Seq
+		goto LOOP
+	} else {
+		if seq != 0 {
+			all = append(all, item.MemberList...)
+			item.MemberList = all
+		}
 	}
 	return item.MemberList, nil
 }
